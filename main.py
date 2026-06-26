@@ -1,247 +1,335 @@
-import pandas as pd
+"""
+=========================================================
+SMART RECRUITMENT AGENT
+Main v2 - Final Submission
+=========================================================
+
+This file manages the project workflow only.
+
+It does NOT contain any business logic.
+
+Modules:
+- fake_mail_generator.py
+- recruitment_agent.py
+- interview_scheduler.py
+- invitation_sender.py
+"""
+
 import os
-from collections import Counter
+import sys
+import subprocess
 
-print("Recruitment Interview Agent Started")
+# =========================================================
+# PROJECT CONFIGURATION
+# =========================================================
 
-# =====================================
-# READ CANDIDATES
-# =====================================
+PROJECT_NAME = "Smart Recruitment Agent"
+VERSION = "2.0"
 
-df = pd.read_excel("candidates.xlsx")
+REQUIRED_FILES = [
+    "candidates.xlsx",
+    "token.json",
+    "fake_mail_generator.py",
+    "recruitment_agent.py",
+    "interview_scheduler.py",
+    "invitation_sender.py"
+]
 
-print(f"\nFound {len(df)} candidates\n")
+# =========================================================
+# UTILITIES
+# =========================================================
 
-results = []
-all_emails = []
 
-# =====================================
-# PROCESS CANDIDATES
-# =====================================
+def clear_screen():
+    os.system("cls" if os.name == "nt" else "clear")
 
-for _, row in df.iterrows():
 
-    candidate_id = row["Candidate_ID"]
-    name = row["Full_Name"]
-    email = row["Email"]
-    phone = row["Phone"]
-    position = row["Position"]
-    region = row["Region"]
-    experience = row["Experience_Years"]
-    education = row["Education"]
-    skills = row["Skills"]
+def pause():
+    input("\nPress ENTER to continue...")
 
-    # =====================================
-    # CALCULATE SCORE
-    # =====================================
 
-    score = 0
+def print_header():
 
-    # Experience
+    clear_screen()
 
-    if experience >= 8:
-        score += 60
-    elif experience >= 5:
-        score += 50
-    elif experience >= 3:
-        score += 30
-    else:
-        score += 10
+    print("=" * 60)
+    print("SMART RECRUITMENT AGENT")
+    print("=" * 60)
+    print(f"Version : {VERSION}")
+    print()
 
-    # Education
 
-    if str(education).upper() == "MA":
-        score += 30
+def check_required_files():
 
-    elif str(education).upper() == "BA":
-        score += 20
+    print("\nChecking required files...\n")
 
-    # Skills
+    missing = []
 
-    skills_text = str(skills).lower()
+    for file_name in REQUIRED_FILES:
 
-    if "python" in skills_text:
-        score += 10
+        if os.path.exists(file_name):
+            print(f"✓ {file_name}")
 
-    if "power bi" in skills_text:
-        score += 10
+        else:
+            print(f"✗ {file_name}")
+            missing.append(file_name)
 
-    if "excel" in skills_text:
-        score += 5
+    if missing:
 
-    # =====================================
-    # LEVEL
-    # =====================================
+        print("\nERROR")
+        print("-" * 40)
+        print("The following required files are missing:\n")
 
-    if experience >= 6:
-        level = "Senior"
+        for file_name in missing:
+            print(f"- {file_name}")
 
-    elif experience >= 3:
-        level = "Mid"
+        print("\nProgram cannot continue.\n")
 
-    else:
-        level = "Junior"
+        raise FileNotFoundError(
+            "Missing required project files."
+        )
 
-    # =====================================
-    # INTERVIEW STATUS
-    # =====================================
+    print("\nAll required files were found.\n")
 
-    if score >= 80:
-        interview_status = "High Priority"
 
-    elif score >= 60:
-        interview_status = "Interview"
+# =========================================================
+# MODULE EXECUTION
+# =========================================================
 
-    else:
-        interview_status = "Review"
+def run_module(script_name):
 
-    # =====================================
-    # EMAIL
-    # =====================================
+    print(f"\nRunning {script_name}...\n")
 
-    subject = f"Interview Invitation - {position}"
+    subprocess.run(
+        [sys.executable, script_name],
+        check=True
+    )
 
-    body = f"""
-Candidate: {name}
+    print("\n✓ Step completed successfully\n")
+# =========================================================
+# MENU ACTIONS
+# =========================================================
 
-Position: {position}
+def generate_fake_applications():
 
-Region: {region}
+    print_header()
 
-Level: {level}
+    check_required_files()
 
-Score: {score}
+    print("DEMO MODE")
+    print("-" * 40)
 
-Status: {interview_status}
-"""
+    run_module("fake_mail_generator.py")
 
-    email_text = f"""
-==================================================
-Candidate ID: {candidate_id}
-Name: {name}
-Email: {email}
+    pause()
 
-Subject:
-{subject}
 
-{body}
-==================================================
-"""
+def process_gmail():
 
-    all_emails.append(email_text)
+    print_header()
 
-    # =====================================
-    # RESULTS
-    # =====================================
+    check_required_files()
 
-    results.append({
+    run_module("recruitment_agent.py")
 
-        "Candidate_ID": candidate_id,
-        "Full_Name": name,
-        "Position": position,
-        "Region": region,
-        "Experience_Years": experience,
-        "Education": education,
-        "Level": level,
-        "Score": score,
-        "Interview_Status": interview_status
+    pause()
 
-    })
 
-# =====================================
-# SAVE EMAILS
-# =====================================
+def schedule_interviews():
 
-with open(
-    "generated_emails.txt",
-    "w",
-    encoding="utf-8"
-) as f:
+    print_header()
 
-    f.write("\n".join(all_emails))
+    check_required_files()
 
-print("generated_emails.txt created")
+    run_module("interview_scheduler.py")
 
-# =====================================
-# RESULTS EXCEL
-# =====================================
+    pause()
 
-results_df = pd.DataFrame(results)
 
-results_df = results_df.sort_values(
-    by="Score",
-    ascending=False
-)
+def send_invitations():
 
-results_df.to_excel(
-    "candidate_results.xlsx",
-    index=False
-)
+    print_header()
 
-print("candidate_results.xlsx created")
+    check_required_files()
 
-# =====================================
-# OPTIONAL GMAIL ANALYSIS
-# =====================================
+    run_module("invitation_sender.py")
 
-if os.path.exists("gmail_inbox_report.txt"):
+    pause()
 
-    senders = []
 
-    with open(
-        "gmail_inbox_report.txt",
-        "r",
-        encoding="utf-8"
-    ) as f:
+# =========================================================
+# FULL WORKFLOW
+# =========================================================
 
-        content = f.read()
+def run_workflow():
 
-    for line in content.splitlines():
+    print_header()
 
-        if line.startswith("FROM:"):
+    check_required_files()
 
-            sender = line.replace(
-                "FROM:",
-                ""
-            ).strip()
+    print("Starting Recruitment Workflow...\n")
 
-            senders.append(sender)
+    workflow = [
+        "recruitment_agent.py",
+        "interview_scheduler.py",
+        "invitation_sender.py"
+    ]
 
-    counter = Counter(senders)
+    for script in workflow:
 
-    print("\nTOP SENDERS\n")
+        run_module(script)
 
-    for sender, count in counter.most_common(5):
-        print(sender, ":", count)
+    print("\n" + "=" * 42)
+    print("WORKFLOW COMPLETED SUCCESSFULLY")
+    print("=" * 42)
 
-# =====================================
-# SUMMARY
-# =====================================
+    pause()
 
-print("\n========================")
-print("PROJECT SUMMARY")
-print("========================")
 
-print(
-    f"Candidates Processed: {len(results_df)}"
-)
+# =========================================================
+# PROJECT INFORMATION
+# =========================================================
 
-print(
-    f"Highest Score: {results_df['Score'].max()}"
-)
+def project_information():
 
-print(
-    f"Average Score: {results_df['Score'].mean():.1f}"
-)
+    print_header()
 
-print(
-    f"High Priority Candidates: "
-    f"{len(results_df[results_df['Interview_Status']=='High Priority'])}"
-)
+    print("Project Name")
+    print("------------")
+    print(PROJECT_NAME)
 
-print("\nFiles Created:")
+    print("\nVersion")
+    print("-------")
+    print(VERSION)
 
-print("generated_emails.txt")
-print("candidate_results.xlsx")
+    print("\nProject Description")
+    print("-------------------")
+    print(
+        "AI-based recruitment automation system "
+        "that processes candidate applications, "
+        "schedules interviews and sends interview "
+        "invitations."
+    )
 
-print("\nProcess completed successfully.")
+    print("\nWorkflow Overview")
+    print("-----------------")
+    print("1. Process Gmail Applications")
+    print("2. Schedule Interviews")
+    print("3. Send Interview Invitations")
+
+    print("\nDemo Mode")
+    print("---------")
+    print(
+        "Generate Fake Applications is available "
+        "for demonstration purposes only and is "
+        "not part of the main recruitment workflow."
+    )
+
+    print("\nTechnologies Used")
+    print("-----------------")
+    print("- Python")
+    print("- Gmail API")
+    print("- Google Calendar API")
+    print("- Pandas")
+    print("- Excel")
+    print("- subprocess")
+    print("- OAuth2 Authentication")
+
+    pause()
+# =========================================================
+# MAIN MENU
+# =========================================================
+
+def main():
+
+    while True:
+
+        try:
+
+            print_header()
+
+            print("1. Generate Fake Applications (Demo)")
+            print("2. Process Gmail Applications")
+            print("3. Schedule Interviews")
+            print("4. Send Interview Invitations")
+            print("5. Run Recruitment Workflow")
+            print("6. Project Information")
+            print("7. Exit")
+
+            choice = input("\nSelect an option (1-7): ").strip()
+
+            if choice == "1":
+
+                generate_fake_applications()
+
+            elif choice == "2":
+
+                process_gmail()
+
+            elif choice == "3":
+
+                schedule_interviews()
+
+            elif choice == "4":
+
+                send_invitations()
+
+            elif choice == "5":
+
+                run_workflow()
+
+            elif choice == "6":
+
+                project_information()
+
+            elif choice == "7":
+
+                print("\nThank you for using")
+                print(PROJECT_NAME)
+                print("Goodbye!\n")
+                break
+
+            else:
+
+                print("\nInvalid option.")
+                pause()
+
+        except FileNotFoundError as error:
+
+            print("\nERROR")
+            print("-" * 40)
+            print(error)
+            pause()
+
+        except subprocess.CalledProcessError as error:
+
+            print("\nWORKFLOW STOPPED")
+            print("-" * 40)
+            print("A module returned an error.")
+            print(error)
+            pause()
+
+        except KeyboardInterrupt:
+
+            print("\n\nOperation cancelled by user.")
+            break
+
+        except Exception as error:
+
+            print("\nUNEXPECTED ERROR")
+            print("-" * 40)
+            print(error)
+            pause()
+
+
+# =========================================================
+# ENTRY POINT
+# =========================================================
+
+if __name__ == "__main__":
+
+    main()
+
+# =========================================================
+# ===== END OF FILE =====
+# =========================================================
