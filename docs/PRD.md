@@ -10,9 +10,9 @@
 
 The Smart Recruitment Agent is an end-to-end recruitment automation system developed to streamline and automate the candidate recruitment process.
 
-The system simulates candidate applications, processes incoming Gmail messages, evaluates applicants according to predefined business rules, schedules interviews in Google Calendar with conflict detection, sends interview invitation emails, and generates recruitment reports.
+The system simulates candidate applications, processes incoming Gmail messages using Claude LLM for free-text analysis, evaluates applicants according to predefined business rules, schedules interviews in Google Calendar with conflict detection, sends interview invitation emails, and generates recruitment reports.
 
-The project demonstrates workflow automation through the integration of multiple Google services and Python-based business logic.
+The project demonstrates workflow automation through the integration of multiple Google services, Claude AI, and Python-based business logic.
 
 ---
 
@@ -29,7 +29,7 @@ Recruitment teams spend a significant amount of time performing repetitive admin
 
 Manual processing increases workload, introduces delays, and may result in inconsistent decision-making.
 
-The Smart Recruitment Agent automates these repetitive tasks, allowing recruiters to focus on candidate selection rather than administrative work.
+The Smart Recruitment Agent automates these repetitive tasks using AI-powered free-text analysis, allowing recruiters to focus on candidate selection rather than administrative work.
 
 ---
 
@@ -37,9 +37,9 @@ The Smart Recruitment Agent automates these repetitive tasks, allowing recruiter
 
 The system aims to:
 
-* Generate demonstration candidate applications.
+* Generate demonstration candidate applications in natural free-text format.
 * Read Gmail applications automatically.
-* Extract candidate information.
+* Extract candidate information using Claude LLM from free-text emails.
 * Evaluate and rank candidates.
 * Classify recruitment status.
 * Schedule interviews automatically.
@@ -64,9 +64,11 @@ The system shall:
 
 ### Candidate Management
 
-* Generate candidate applications.
+* Generate candidate applications in natural free-text format.
 * Read Gmail messages.
-* Extract candidate information.
+* Read only unread emails.
+* Mark emails as read after processing.
+* Extract candidate information using Claude LLM.
 * Calculate recruitment scores.
 * Classify candidates into recruitment categories.
 
@@ -121,9 +123,10 @@ The system shall provide:
 ## Inputs
 
 * Candidate database (Excel)
-* Gmail inbox messages
+* Gmail inbox messages (unread only)
 * Google Calendar
 * Google OAuth authentication
+* Anthropic Claude API
 
 ---
 
@@ -147,6 +150,8 @@ The system generates:
 * Gmail API
 * Google Calendar API
 * Google OAuth 2.0
+* Claude AI (Anthropic)
+* Claude API (claude-haiku-4-5-20251001)
 * Pandas
 * OpenPyXL
 * Google API Python Client
@@ -159,7 +164,10 @@ The system generates:
 The project is considered successful when it can:
 
 * Authenticate successfully with Google APIs.
+* Authenticate successfully with Anthropic Claude API.
 * Process Gmail applications automatically.
+* Read only unread emails and mark them as read after processing.
+* Extract candidate information from free-text emails using Claude LLM.
 * Evaluate and classify candidates.
 * Generate recruitment reports.
 * Check calendar availability before scheduling interviews.
@@ -174,27 +182,28 @@ The project is considered successful when it can:
 * Prevent duplicate interview scheduling.
 * Prevent duplicate invitation emails.
 * Execute the complete workflow successfully through the Main application.
-* ---
+
+---
 
 ## Final Deliverables
 
 The completed project includes:
 
-* Recruitment Agent
-* Fake Mail Generator
+* Recruitment Agent with Claude LLM Integration
+* Fake Mail Generator with Natural Free-Text Templates
 * Interview Scheduler with Calendar Conflict Detection
 * Invitation Sender with Dual Excel Sync
 * Main Workflow Manager
 * Gmail Integration
 * Google Calendar Integration
+* Claude AI Integration
 * Calendar Conflict Detection
 * Conflict Notification Emails
 * Weekend-Aware Scheduling
 * 7-Day Advance Scheduling
 * Excel Reporting
 * Complete Project Documentation
-
----
+* ---
 
 ## Project Status
 
@@ -202,4 +211,13 @@ The completed project includes:
 
 The Smart Recruitment Agent project has been fully implemented, tested, documented, and published.
 
-The final solution provides a complete recruitment automation workflow from candidate application generation through interview invitation delivery, including calendar conflict detection, automatic conflict notifications, weekend-aware scheduling, and synchronized Excel reporting.
+The final solution provides a complete recruitment automation workflow from candidate application generation through interview invitation delivery, including:
+
+* Claude LLM free-text email analysis
+* Calendar conflict detection
+* Automatic conflict notifications
+* Weekend-aware scheduling
+* Synchronized Excel reporting
+* Unread email processing with automatic read marking
+
+---
