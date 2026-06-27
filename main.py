@@ -106,7 +106,7 @@ def run_module(script_name):
     )
 
     print("\n✓ Step completed successfully\n")
-# =========================================================
+    # =========================================================
 # MENU ACTIONS
 # =========================================================
 
@@ -206,9 +206,10 @@ def project_information():
     print("-------------------")
     print(
         "AI-based recruitment automation system "
-        "that processes candidate applications, "
-        "schedules interviews and sends interview "
-        "invitations."
+        "that processes candidate applications using "
+        "Claude LLM for free-text analysis, "
+        "schedules interviews with calendar conflict "
+        "detection and sends interview invitations."
     )
 
     print("\nWorkflow Overview")
@@ -230,13 +231,15 @@ def project_information():
     print("- Python")
     print("- Gmail API")
     print("- Google Calendar API")
+    print("- Claude AI (Anthropic)")
+    print("- Claude API")
     print("- Pandas")
     print("- Excel")
     print("- subprocess")
     print("- OAuth2 Authentication")
 
     pause()
-# =========================================================
+    # =========================================================
 # MAIN MENU
 # =========================================================
 
