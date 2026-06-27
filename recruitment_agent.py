@@ -1,7 +1,8 @@
-import re
 import base64
+import json
 from datetime import datetime
 
+import anthropic
 import pandas as pd
 
 from google.oauth2.credentials import Credentials
@@ -11,6 +12,16 @@ SCOPES = [
     "https://www.googleapis.com/auth/gmail.modify",
     "https://www.googleapis.com/auth/gmail.send"
 ]
+
+# =====================================
+# ANTHROPIC CLIENT
+# =====================================
+
+ANTHROPIC_API_KEY = "YOUR_API_KEY_HERE"
+
+anthropic_client = anthropic.Anthropic(
+    api_key=ANTHROPIC_API_KEY
+)
 
 print("=" * 60)
 print("SMART RECRUITMENT AGENT")
@@ -33,24 +44,102 @@ gmail_service = build(
 )
 
 # =====================================
-# GET EMAILS
+# EXTRACT CANDIDATE INFO USING CLAUDE
+# =====================================
+
+def extract_candidate_info(email_body, email_subject):
+
+    prompt = f"""You are a recruitment assistant.
+Analyze the following job application email and extract candidate information.
+
+Email Subject: {email_subject}
+
+Email Body:
+{email_body}
+
+Extract the following information and return ONLY a JSON object with these exact fields:
+- candidate_name: full name of the candidate
+- candidate_email: email address of the candidate
+- position: job position applied for
+- region: geographic region or location mentioned
+- experience: number of years of experience (number only, e.g. "5")
+- education: highest education level (BA, MA, PhD, or Other)
+- skills: comma-separated list of technical skills mentioned
+
+If any field cannot be found, use an empty string "".
+
+Return ONLY the JSON object, no other text."""
+
+    try:
+
+        message = anthropic_client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=500,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        response_text = message.content[0].text.strip()
+
+        response_text = response_text.replace(
+            "```json", ""
+        ).replace(
+            "```", ""
+        ).strip()
+
+        candidate_data = json.loads(response_text)
+
+        return candidate_data
+
+    except Exception as e:
+
+        print(f"Claude extraction error: {e}")
+
+        return None
+
+
+# =====================================
+# MARK EMAIL AS READ
+# =====================================
+
+def mark_as_read(message_id):
+
+    try:
+
+        gmail_service.users().messages().modify(
+            userId="me",
+            id=message_id,
+            body={"removeLabelIds": ["UNREAD"]}
+        ).execute()
+
+    except Exception as e:
+
+        print(f"Error marking email as read: {e}")
+
+
+# =====================================
+# GET UNREAD EMAILS ONLY
 # =====================================
 
 results = []
 
 messages = gmail_service.users().messages().list(
     userId="me",
-    maxResults=50
+    maxResults=50,
+    q="is:unread"
 ).execute()
 
 message_list = messages.get("messages", [])
 
-print(f"Messages downloaded : {len(message_list)}")
+print(f"Unread messages found : {len(message_list)}")
 print("-" * 60)
 
 candidate_counter = 1
 processed_counter = 0
-
 # =====================================
 # PROCESS EMAILS
 # =====================================
@@ -112,51 +201,81 @@ for item in message_list:
             )
 
     # =====================================
-    # EXTRACT FIELDS
+    # SKIP NON-APPLICATION EMAILS
     # =====================================
 
-    def extract(pattern):
+    application_keywords = [
+        "application",
+        "applying",
+        "position",
+        "candidate",
+        "resume",
+        "cv",
+        "job",
+        "interest",
+        "opening"
+    ]
 
-        match = re.search(
-            pattern,
-            body,
-            re.IGNORECASE
-        )
+    subject_lower = subject.lower()
+    body_lower = body.lower()
 
-        if match:
-            return match.group(1).strip()
-
-        return ""
-
-    candidate_name = extract(
-        r"Candidate Name:\s*(.*)"
+    is_application = any(
+        keyword in subject_lower or keyword in body_lower
+        for keyword in application_keywords
     )
 
-    candidate_email = extract(
-        r"Email:\s*(.*)"
+    if not is_application:
+        mark_as_read(item["id"])
+        continue
+
+    if not body.strip():
+        mark_as_read(item["id"])
+        continue
+
+    # =====================================
+    # EXTRACT USING CLAUDE
+    # =====================================
+
+    print(f"Analyzing email: {subject[:50]}...")
+
+    candidate_data = extract_candidate_info(
+        body,
+        subject
     )
 
-    position = extract(
-        r"Position:\s*(.*)"
-    )
+    if candidate_data is None:
+        continue
 
-    region = extract(
-        r"Region:\s*(.*)"
-    )
+    candidate_name = str(
+        candidate_data.get("candidate_name", "")
+    ).strip()
 
-    experience = extract(
-        r"Experience:\s*(.*)"
-    )
+    candidate_email = str(
+        candidate_data.get("candidate_email", "")
+    ).strip()
 
-    education = extract(
-        r"Education:\s*(.*)"
-    )
+    position = str(
+        candidate_data.get("position", "")
+    ).strip()
 
-    skills = extract(
-        r"Skills:\s*(.*)"
-    )
+    region = str(
+        candidate_data.get("region", "")
+    ).strip()
+
+    experience = str(
+        candidate_data.get("experience", "")
+    ).strip()
+
+    education = str(
+        candidate_data.get("education", "")
+    ).strip()
+
+    skills = str(
+        candidate_data.get("skills", "")
+    ).strip()
 
     if candidate_name == "":
+        mark_as_read(item["id"])
         continue
 
     processed_counter += 1
@@ -229,6 +348,7 @@ for item in message_list:
     print(f"Score : {score}")
     print(f"Status: {status}")
     print("-" * 60)
+
     results.append({
 
         "Candidate_ID": candidate_id,
@@ -261,6 +381,11 @@ for item in message_list:
 
     })
 
+    # =====================================
+    # MARK EMAIL AS READ
+    # =====================================
+
+    mark_as_read(item["id"])
 # =====================================
 # EMAIL SCAN COMPLETED
 # =====================================
@@ -325,6 +450,7 @@ interview = len(
 review = len(
     df[df["Status"] == "Review"]
 )
+
 # =====================================
 # CREATE SUMMARY FILE
 # =====================================
