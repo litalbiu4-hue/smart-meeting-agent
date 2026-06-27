@@ -5,3 +5,4 @@ __pycache__/
 gmail_candidates.xlsx
 interview_candidates.xlsx
 gmail_summary.txt
+*.env
