@@ -22,6 +22,10 @@ The primary objectives of this project are:
 * Reduce manual HR workload.
 * Evaluate and rank candidates automatically.
 * Schedule interviews using Google Calendar.
+* Detect calendar conflicts before scheduling.
+* Send conflict notification emails automatically.
+* Schedule interviews at least 7 days in advance.
+* Skip weekends when scheduling interviews.
 * Send interview invitations automatically via Gmail.
 * Generate recruitment reports in Excel format.
 * Demonstrate a complete AI-assisted recruitment workflow.
@@ -38,6 +42,10 @@ The system provides the following capabilities:
 * Automatic Candidate Evaluation
 * Intelligent Candidate Ranking
 * Interview Scheduling
+* Calendar Conflict Detection
+* Conflict Notification Emails
+* Weekend-Aware Interview Scheduling
+* 7-Day Advance Scheduling
 * Automatic Email Invitations
 * Excel Report Generation
 * Duplicate Detection and Prevention
@@ -67,6 +75,7 @@ The system provides the following capabilities:
                        │
                        ▼
            Interview Scheduler
+           (Conflict Detection)
                        │
                        ▼
             Google Calendar
@@ -94,9 +103,11 @@ fake_mail_generator.py recruitment_agent.py
                                │
                                ▼
                   interview_scheduler.py
+                  (Calendar Conflict Detection)
                                │
                                ▼
                   invitation_sender.py
+                  (Dual Excel Sync)
 ```
 
 Each module can run independently or as part of the complete workflow managed by **main.py**.
@@ -142,14 +153,16 @@ The Smart Recruitment Agent demonstrates:
 * Business Rule Evaluation
 * Automated Decision Making
 * Calendar Management
+* Calendar Conflict Detection
+* Conflict Notification Emails
+* Weekend-Aware Scheduling
 * Email Automation
 * Authentication with OAuth 2.0
 * Excel Reporting
 * Error Handling
 * Duplicate Prevention
 * Modular Software Design
-
----
+* ---
 ## Project Structure
 
 ```text
@@ -188,7 +201,7 @@ The repository contains:
 | `main.py`                | Main workflow manager                             |
 | `fake_mail_generator.py` | Generates demonstration job applications          |
 | `recruitment_agent.py`   | Reads Gmail applications and evaluates candidates |
-| `interview_scheduler.py` | Schedules interviews using Google Calendar        |
+| `interview_scheduler.py` | Schedules interviews with conflict detection      |
 | `invitation_sender.py`   | Sends interview invitation emails                 |
 | `create_token.py`        | Creates the Google OAuth token                    |
 | `requirements.txt`       | Python dependencies                               |
@@ -318,6 +331,7 @@ python main.py
 After launching the application, the Smart Recruitment Agent main menu will appear.
 
 ---
+
 ## Running the Project
 
 Launch the application using:
@@ -402,6 +416,11 @@ Candidates classified as **High Priority** are automatically selected for interv
 
 The Interview Scheduler:
 
+* Checks calendar availability before scheduling.
+* Detects and handles calendar conflicts automatically.
+* Sends conflict notification emails to affected candidates.
+* Schedules interviews at least 7 days in advance.
+* Skips Friday and Saturday when scheduling.
 * Creates interview events in Google Calendar.
 * Assigns interview dates and times.
 * Updates the recruitment Excel report.
@@ -431,10 +450,12 @@ The Invitation Sender performs the following tasks:
 * Updates the invitation status.
 * Records the invitation date and time.
 * Prevents duplicate invitation emails.
+* Syncs invitation status to both Excel reports.
 
-**Updated File**
+**Updated Files**
 
 * gmail_candidates.xlsx
+* interview_candidates.xlsx
 
 **Executed Module**
 
@@ -455,9 +476,11 @@ Recruitment Agent
         │
         ▼
 Interview Scheduler
+(Calendar Conflict Detection)
         │
         ▼
 Invitation Sender
+(Dual Excel Sync)
 ```
 
 The Demo module is intentionally excluded from this workflow.
@@ -493,7 +516,6 @@ This option does not execute any module.
 Safely terminates the application.
 
 The program closes gracefully after displaying a confirmation message.
-
 ---
 
 ## Workflow Execution
@@ -510,7 +532,17 @@ The Recruitment Agent reads candidate applications from Gmail, evaluates each ca
 
 Candidates classified as **High Priority** are automatically selected.
 
-Interview Scheduler creates Google Calendar events and updates the recruitment report with:
+Interview Scheduler:
+
+* Checks calendar availability before scheduling.
+* Detects calendar conflicts automatically.
+* Sends conflict notification emails to affected candidates.
+* Schedules interviews at least 7 days in advance.
+* Skips Friday and Saturday when scheduling.
+* Creates Google Calendar events for available slots.
+* Updates the recruitment report with interview details.
+
+Interview details recorded:
 
 * Interview Date
 * Interview Time
@@ -532,6 +564,8 @@ After successful delivery the system updates:
 
 * Invitation Status
 * Invitation Sent Date
+
+Both `gmail_candidates.xlsx` and `interview_candidates.xlsx` are synced automatically.
 
 Duplicate invitations are automatically prevented.
 
@@ -603,14 +637,19 @@ This module processes all candidate applications received through Gmail.
 
 ### interview_scheduler.py
 
-Automatically schedules interviews for eligible candidates.
+Automatically schedules interviews for eligible candidates with full calendar conflict detection.
 
 **Main Responsibilities**
 
 * Read recruitment results.
 * Select High Priority candidates.
+* Check calendar availability before scheduling.
+* Detect and handle calendar conflicts.
+* Send conflict notification emails to affected candidates.
+* Schedule interviews at least 7 days in advance.
+* Skip Friday and Saturday when scheduling.
 * Create Google Calendar events.
-* Assign interview dates.
+* Assign interview dates and times.
 * Update recruitment reports.
 * Prevent duplicate interviews.
 
@@ -632,10 +671,12 @@ Sends interview invitation emails to scheduled candidates.
 * Update invitation status.
 * Record invitation sending date.
 * Prevent duplicate invitation emails.
+* Sync invitation status to both Excel reports.
 
-**Updated File**
+**Updated Files**
 
 * gmail_candidates.xlsx
+* interview_candidates.xlsx
 
 ---
 
@@ -689,6 +730,9 @@ Information includes:
 * Position
 * Interview Date
 * Interview Time
+* Calendar Status
+* Invitation Status
+* Invitation Sent Date
 
 ---
 
@@ -705,8 +749,7 @@ Includes:
 * High Priority Candidates
 * Interview Candidates
 * Review Candidates
-
----
+* ---
 
 ## Error Handling
 
@@ -738,7 +781,11 @@ Duplicate candidate email addresses are automatically removed before report gene
 
 ### Interview Scheduling
 
-Before creating a Google Calendar event, the system verifies whether the candidate already has a scheduled interview.
+Before creating a Google Calendar event, the system:
+
+* Checks calendar availability for the requested time slot.
+* Verifies whether the candidate already has a scheduled interview.
+* Sends a conflict notification email if the slot is unavailable.
 
 If an interview already exists, the candidate is skipped.
 
@@ -752,6 +799,35 @@ Before sending an invitation email, the system verifies:
 * Invitation Status
 
 If an invitation has already been sent, no additional invitation is generated.
+
+---
+
+## Calendar Conflict Detection
+
+The Interview Scheduler includes a full calendar conflict detection mechanism.
+
+### How It Works
+
+Before creating each interview event, the system:
+
+1. Calculates the proposed interview time slot.
+2. Queries Google Calendar for existing events in that time slot.
+3. If the slot is available — creates the interview event.
+4. If the slot is occupied — sends a conflict notification email to the candidate.
+
+### Conflict Notification Email
+
+When a conflict is detected, the system automatically sends a notification email to the affected candidate informing them that the interview could not be scheduled at the requested time and that the HR team will contact them to arrange an alternative.
+
+### Weekend-Aware Scheduling
+
+The system automatically skips Friday and Saturday when scheduling interviews.
+
+If the next available slot falls on a weekend, the scheduler advances to the following Sunday.
+
+### 7-Day Advance Scheduling
+
+All interviews are scheduled at least 7 days in advance from the date the workflow is executed.
 
 ---
 
@@ -782,6 +858,10 @@ Completed tests include:
 * Candidate ranking.
 * Excel report generation.
 * Interview scheduling.
+* Calendar conflict detection.
+* Conflict notification email delivery.
+* Weekend skip logic.
+* 7-day advance scheduling.
 * Invitation email delivery.
 * Duplicate interview prevention.
 * Duplicate invitation prevention.
@@ -790,6 +870,7 @@ Completed tests include:
 All modules were tested independently and as part of the complete integrated workflow.
 
 ---
+
 ## Project Highlights
 
 The Smart Recruitment Agent project demonstrates the integration of multiple technologies into a complete recruitment automation platform.
@@ -799,8 +880,12 @@ Key project highlights include:
 * End-to-end recruitment workflow automation.
 * Gmail API integration for processing applications.
 * Google Calendar API integration for interview scheduling.
+* Calendar conflict detection and automatic handling.
+* Conflict notification emails sent automatically.
+* Weekend-aware interview scheduling.
+* 7-day advance scheduling enforcement.
 * Automated interview invitation emails.
-* Excel-based recruitment reporting.
+* Excel-based recruitment reporting with dual file sync.
 * Interactive workflow management.
 * Duplicate detection and prevention.
 * Modular software architecture.
@@ -839,117 +924,178 @@ Key project highlights include:
 * Technical Documentation
 * Workflow Design
 * Project Planning
+* ---
+
+## Error Handling
+
+The project includes comprehensive exception handling.
+
+Handled situations include:
+
+* Missing required files.
+* Gmail API connection errors.
+* Google Calendar API failures.
+* Authentication errors.
+* Missing permissions.
+* Keyboard interruption.
+* Unexpected runtime exceptions.
+
+Whenever an unexpected error occurs, the workflow stops safely to prevent inconsistent data.
 
 ---
 
-## Future Improvements
+## Duplicate Prevention
 
-Possible future enhancements include:
+The system includes several duplicate prevention mechanisms.
 
-* AI-based CV parsing using Large Language Models (LLMs).
-* Automatic interview reminders.
-* SMS and WhatsApp notifications.
-* Candidate self-service interview rescheduling.
-* Integration with LinkedIn API.
-* Multi-user authentication.
-* HR management dashboard.
-* Machine Learning candidate ranking.
-* Cloud deployment using Docker and Azure or AWS.
-* Integration with additional HR systems.
+### Candidate Processing
+
+Duplicate candidate email addresses are automatically removed before report generation.
 
 ---
 
-## Project Status
+### Interview Scheduling
 
-**Status:** ✅ Completed
+Before creating a Google Calendar event, the system:
 
-The Smart Recruitment Agent project has been fully implemented, tested, and validated.
+* Checks calendar availability for the requested time slot.
+* Verifies whether the candidate already has a scheduled interview.
+* Sends a conflict notification email if the slot is unavailable.
 
-The final version successfully supports:
+If an interview already exists, the candidate is skipped.
 
-* Candidate application generation.
-* Gmail application processing.
-* Automatic candidate evaluation.
+---
+
+### Invitation Delivery
+
+Before sending an invitation email, the system verifies:
+
+* Calendar Status
+* Invitation Status
+
+If an invitation has already been sent, no additional invitation is generated.
+
+---
+
+## Calendar Conflict Detection
+
+The Interview Scheduler includes a full calendar conflict detection mechanism.
+
+### How It Works
+
+Before creating each interview event, the system:
+
+1. Calculates the proposed interview time slot.
+2. Queries Google Calendar for existing events in that time slot.
+3. If the slot is available — creates the interview event.
+4. If the slot is occupied — sends a conflict notification email to the candidate.
+
+### Conflict Notification Email
+
+When a conflict is detected, the system automatically sends a notification email to the affected candidate informing them that the interview could not be scheduled at the requested time and that the HR team will contact them to arrange an alternative.
+
+### Weekend-Aware Scheduling
+
+The system automatically skips Friday and Saturday when scheduling interviews.
+
+If the next available slot falls on a weekend, the scheduler advances to the following Sunday.
+
+### 7-Day Advance Scheduling
+
+All interviews are scheduled at least 7 days in advance from the date the workflow is executed.
+
+---
+
+## Validation
+
+Before executing any workflow, the system validates:
+
+* Required project files.
+* Authentication files.
+* Project modules.
+* Input files.
+
+Only after successful validation does the workflow continue.
+
+---
+
+## Testing
+
+The project was tested using multiple execution scenarios.
+
+Completed tests include:
+
+* Gmail API connectivity.
+* Google Calendar connectivity.
+* Fake candidate generation.
+* Candidate processing.
+* Candidate evaluation.
 * Candidate ranking.
-* Google Calendar interview scheduling.
-* Automatic interview invitation emails.
 * Excel report generation.
-* Duplicate prevention.
-* Complete workflow automation.
+* Interview scheduling.
+* Calendar conflict detection.
+* Conflict notification email delivery.
+* Weekend skip logic.
+* 7-day advance scheduling.
+* Invitation email delivery.
+* Duplicate interview prevention.
+* Duplicate invitation prevention.
+* Complete workflow execution through Main v2.
 
-All project modules were tested both independently and as part of the integrated workflow.
-
----
-
-## Repository Contents
-
-The repository includes:
-
-* Python source code
-* Project documentation
-* Installation requirements
-* Project screenshots
-* Supporting documentation
-* Skills folder
-
-Output files are generated automatically during execution.
+All modules were tested independently and as part of the complete integrated workflow.
 
 ---
 
-## Screenshots
+## Project Highlights
 
-The following screenshots are recommended for the GitHub repository:
+The Smart Recruitment Agent project demonstrates the integration of multiple technologies into a complete recruitment automation platform.
 
-* Main Menu
-* Gmail Inbox
-* Candidate Processing
-* Google Calendar Interview Schedule
-* Interview Invitation Email
-* Excel Reports
-* Workflow Execution
+Key project highlights include:
 
-Store all screenshots inside the **screenshots** folder.
-
----
-
-## Author
-
-**Lital Edani**
-
-Bar-Ilan University
-
-M.Sc. Supply Chain Management
-
-Course: Applied Artificial Intelligence
-
-2026
+* End-to-end recruitment workflow automation.
+* Gmail API integration for processing applications.
+* Google Calendar API integration for interview scheduling.
+* Calendar conflict detection and automatic handling.
+* Conflict notification emails sent automatically.
+* Weekend-aware interview scheduling.
+* 7-day advance scheduling enforcement.
+* Automated interview invitation emails.
+* Excel-based recruitment reporting with dual file sync.
+* Interactive workflow management.
+* Duplicate detection and prevention.
+* Modular software architecture.
+* Comprehensive error handling.
+* Google OAuth 2.0 authentication.
 
 ---
 
-## Acknowledgments
+## Skills Demonstrated
 
-Special thanks to the course instructors for their guidance throughout the project.
+### Technical Skills
 
-This project also utilizes Google's official Gmail API and Google Calendar API for workflow automation.
+* Python Programming
+* Object-Oriented Programming (OOP)
+* Workflow Automation
+* REST API Integration
+* Gmail API
+* Google Calendar API
+* OAuth 2.0 Authentication
+* Excel Data Processing
+* Pandas
+* OpenPyXL
+* Error Handling
+* File Management
+* Git & GitHub
+* Software Documentation
 
----
+### Professional Skills
 
-## License
-
-This project was developed exclusively for academic purposes as part of the Applied Artificial Intelligence course.
-
-Commercial use is not permitted without the author's written permission.
-
----
-
-## Conclusion
-
-Smart Recruitment Agent demonstrates how modern software engineering practices, workflow automation, and cloud-based APIs can be combined to build a complete recruitment management system.
-
-The project integrates Gmail, Google Calendar, Excel reporting, and modular Python applications into a single automated workflow, providing a realistic example of intelligent recruitment automation.
-
----
-
-**End of README**
-
-© 2026 Lital Edani. All Rights Reserved.
+* Problem Solving
+* Process Automation
+* Business Process Analysis
+* System Integration
+* Software Testing
+* Debugging
+* Technical Documentation
+* Workflow Design
+* Project Planning
